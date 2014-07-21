@@ -1,9 +1,13 @@
+#include "ChessPiece.h"
+
 #ifndef CHESSBOARD_H
 #define CHESSBOARD_H
-#endif
+
+
 
 class ChessBoard;
 class MainWindow;
+
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
@@ -13,6 +17,7 @@ class Controller
  private:
   MainWindow *view;
   ChessBoard *board;
+  PieceColor inMove;
   
 
  public:
@@ -22,3 +27,5 @@ class Controller
 };
 
 #endif // CONTROLLER_H
+
+#endif

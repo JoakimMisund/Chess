@@ -9,6 +9,7 @@ Move::Move( int fx, int fy, int tx, int ty, Piece* taken ) {
   to_x = tx;
   to_y = ty;
   pieceTaken = taken;
+  amp = false;
 }
 
 Move::Move( int fx, int fy, int tx, int ty ) {
@@ -18,6 +19,7 @@ Move::Move( int fx, int fy, int tx, int ty ) {
   to_x = tx;
   to_y = ty;
   pieceTaken = NULL;
+  amp = false;
 }
 
 
@@ -106,6 +108,7 @@ bool ChessBoard::makeMove(int from_x, int from_y, int to_x, int to_y ) {
 
   if( !validateMove( move ) ) return false;
 
+  //castling
   if( getPiece( from_x, from_y )->type == KING && std::abs(to_x - from_x) == 2) {
     if( to_x != 2 ) {
       setPiece( from_x + 1, from_y, removePiece(to_x+1, to_y) );
@@ -113,11 +116,21 @@ bool ChessBoard::makeMove(int from_x, int from_y, int to_x, int to_y ) {
       setPiece( from_x - 1, from_y, removePiece(to_x - 2, to_y) );
     }
   }
+  
+  //ampasang
+  
+  
 
   /* adds the piece to be taken if exists, then adds the move to the stack of moves */
 
   Piece* pieceToMove = removePiece( from_x, from_y );
   move.pieceTaken = getPiece( to_x, to_y );
+
+  //amp
+  if( (pieceToMove->type == PAWN) && (std::abs( to_x - from_x ) == 1 ) && (getPiece( to_x, to_y ) == NULL) ) {
+    move.pieceTaken = removePiece( to_x, from_y );
+    move.amp = true;
+  }
 
   if( move.pieceTaken != NULL ) {
 
@@ -350,6 +363,7 @@ Square* ChessBoard::findKing( PieceColor color ) {
 
 void ChessBoard::goBackAMove() {
 
+  if( moves.size() == 0 ) return;
   Move prevMove = moves.top();
   moves.pop();
 
@@ -364,6 +378,7 @@ void ChessBoard::goBackAMove() {
   moveBackPiece->x = from_x;
   moveBackPiece->y = from_y;
 
+  //castling
   if( moveBackPiece->type == KING && std::abs(to_x - from_x) == 2 ) {
     if( to_x != 2 ) {
       setPiece( to_x+1, to_y, removePiece( from_x+1, from_y));
@@ -372,12 +387,21 @@ void ChessBoard::goBackAMove() {
     }
   }
 
+  //amp
+ 
+
   Piece* backInPlay = prevMove.pieceTaken;
 
   if( backInPlay != NULL ) {
-    setPiece( to_x, to_y, backInPlay );
-    backInPlay->x = to_x;
-    backInPlay->y = to_y;
+     if( prevMove.amp ) {
+       setPiece( to_x, from_y, backInPlay );
+       backInPlay->x = to_x;
+       backInPlay->y = from_y;
+     } else {
+       setPiece( to_x, to_y, backInPlay );
+       backInPlay->x = to_x;
+       backInPlay->y = to_y;
+     }
   }
 }
 
@@ -486,9 +510,34 @@ void ChessBoard::print() {
 //TODO
 bool ChessBoard::isMate( PieceColor color ) {
 
+   
   Square* kS = findKing( color );
   Piece* king = kS->getPiece();
   int from_x = kS->x, from_y = kS->y;
+
+  std::vector<Piece*> pieces = findThreatheningPieces( king );
+  //To do, check if any of the pieces can take the threathening pieces.
+  
+  if( pieces.size() == 1 ) return false;
+  else {
+    std::vector<Piece*> toCheck = ( color == WHITE ) ? whitePieces : blackPieces;
+    int nrOfThreathening = pieces.size() - 1;
+
+    for( int i = pieces.size() - 1; i >= 1; --i ) {
+      Piece* p = toCheck[i];
+      for( std::vector<Piece*>::iterator it = toCheck.begin(); it != toCheck.end(); ++it ) {
+	bool b = makeMove((*it)->x, (*it)->y, p->x, p->y);
+	if( b ) {
+	  goBackAMove();
+	  nrOfThreathening--;
+	  if( nrOfThreathening == 0 )
+	    return false;
+	}
+      }
+    }
+    
+    
+  }
 
   PieceColor toMove;
 
@@ -520,39 +569,34 @@ bool ChessBoard::isMate( PieceColor color ) {
     }
   }
   return true;
-
-  std::vector<Piece*> pieces = findThreatheningPieces( king );
-  //To do, check if any of the pieces can take the threathening pieces.
 }
 
 std::vector<Piece*> ChessBoard::findThreatheningPieces( Piece* p ) {
+  
   std::vector<Piece*> pieces;
-
-  PieceColor color;
-
-  if (p->color = WHITE) color = BLACK;
-  else color = WHITE;
+  pieces.push_back( NULL );
 
   std::vector<Piece*> toCheck;
 
-  if( color == WHITE ) {
-    toCheck = whitePieces;
-  }
-  else {
+  if( p->color == WHITE ) {
     toCheck = blackPieces;
   }
-
+  else {
+    toCheck = whitePieces;
+  }
+  
   for( std::vector<Piece*>::iterator it = toCheck.begin(); it != toCheck.end(); ++it ) {
-
+    
     if( (*it)->inPlay ) {
-
+      
       Move m((*it)->x, (*it)->y, p->x, p->y);
-
-      if( validateMove( m ) ){
+      bool b = makeMove((*it)->x, (*it)->y, p->x, p->y);
+      if( b ){
+	goBackAMove();
 	pieces.push_back( getPiece( (*it)->x, (*it)->y ) );
       }
     }
   }
-
+  
   return pieces;
 }

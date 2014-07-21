@@ -5,6 +5,9 @@
 #include <QColor>
 #include <QIcon>
 #include <QPixmap>
+#include <QDockWidget>
+#include <QLabel>
+#include <QString>
 
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent)
@@ -22,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
       QPushButton *label = new QPushButton( QString::fromStdString( " " ) );
       QObject::connect( label, SIGNAL( clicked() ), this , SLOT( handleSquarePress() ) );
       label->setFixedSize( 70, 70 );
+      label->setFocusPolicy( Qt::NoFocus );
 
       
       if( (i + j) % 2 == 0 ) {
@@ -37,6 +41,18 @@ MainWindow::MainWindow(QWidget *parent) :
   setCentralWidget( mainWindow );
   setWindowTitle( "Chess" );
   show();
+}
+
+void MainWindow::reportMate( QString s ) {
+  QWidget* w = new QWidget();
+  QLabel *l = new QLabel(s, w);
+  QFont f( "Arial", 40, QFont::Bold);
+  l->setFont( f );
+  QVBoxLayout *layout = new QVBoxLayout();
+  layout->addWidget( l );
+  w->setLayout( layout );
+  
+  setCentralWidget( w );
 }
 
 MainWindow::~MainWindow()
@@ -72,7 +88,9 @@ void MainWindow::handleSquarePress() {
   
   if( p1 == NULL ) {
     
-    p1 = squareClicked;
+    if( (b->getPiece( squareClicked->x, squareClicked->y ) ) != NULL ) {
+      p1 = squareClicked;
+    }
       
 
   } else if( squareClicked != NULL) {

@@ -9,6 +9,8 @@ struct Move {
   int from_x, from_y;
   int to_x, to_y;
   
+  bool amp;
+  
   Piece* pieceTaken;
   
   Move( int fx, int fy, int tx, int ty, Piece* taken );

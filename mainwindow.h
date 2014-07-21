@@ -7,6 +7,8 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QSignalMapper>
+#include <QVBoxLayout>
+#include <QFont>
 
 #ifndef CHESSBOARD_H
 #define CHESSBOARD_H
@@ -33,6 +35,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     void showBoard( );
     void setController( Controller *c );
+    void reportMate( QString s );
     ~MainWindow();
     ChessBoard *b;
     

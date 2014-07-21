@@ -1,5 +1,8 @@
 #include <string>
 
+#ifndef CHESSPIECE_H
+#define CHESSPIECE_H
+
 enum PieceType{ PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 
 enum PieceColor{ WHITE, BLACK };
@@ -22,3 +25,5 @@ struct Piece {
   std::string toString();
 
 };
+
+#endif

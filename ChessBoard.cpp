@@ -110,15 +110,24 @@ bool ChessBoard::makeMove(int from_x, int from_y, int to_x, int to_y ) {
 
   //castling
   if( getPiece( from_x, from_y )->type == KING && std::abs(to_x - from_x) == 2) {
+    
+    Piece* rook;
+    int x, y = from_y;
+    
+    x = (to_x != 2) ? from_x + 1 : from_x - 1;
+    
     if( to_x != 2 ) {
-      setPiece( from_x + 1, from_y, removePiece(to_x+1, to_y) );
+      rook = removePiece(to_x+1, to_y);  
     } else {
-      setPiece( from_x - 1, from_y, removePiece(to_x - 2, to_y) );
+      rook = removePiece( to_x - 2, to_y);
     }
+    
+    setPiece( x, y, rook );
+    rook->x = x;
+    rook->y = y;
   }
   
-  //ampasang
-  
+ 
   
 
   /* adds the piece to be taken if exists, then adds the move to the stack of moves */
@@ -255,8 +264,6 @@ bool ChessBoard::checkHorisontalOrVerticalLine( Move move ) {
     x += dir_x;
     y += dir_y;
   }
-  std::cout << (move.from_x + dir_x) << " y: " << (move.from_y + dir_y) << "\n";
-  std::cout << (getPiece( (move.from_x + dir_x) , (move.from_y + dir_y) ) != NULL ) << "\n";
   return true;
 }
 
@@ -337,14 +344,21 @@ bool ChessBoard::checkIfCanMoveTo( PieceColor color, int to_x, int to_y ) {
     if( (*it)->inPlay ) {
 
       Move m((*it)->x, (*it)->y, to_x, to_y);
-
+      
+      Piece* piece = getPiece( (*it)->x, (*it)->y );
+      if( piece->type == QUEEN ) {
+	std::cout << "Checking if queen on: x: " << piece->x << " y: " <<piece->y << ". can move to x: " << to_x << " y: " << to_y << "\n";
+      } 
+      
       if( validateMove( m ) ){
-	std::cout << ((*it)->x) << " " << ((*it)->y) << "\n";
 	return true;
       }
     }
   }
-
+  if( color == WHITE ) std::cout << "white cant move to: ";
+  else std::cout << "black cant move to: ";
+  
+  std::cout << " x: "<< to_x << " y: " << to_y << "\n";
   return false;
 }
 
@@ -397,11 +411,13 @@ void ChessBoard::goBackAMove() {
        setPiece( to_x, from_y, backInPlay );
        backInPlay->x = to_x;
        backInPlay->y = from_y;
+
      } else {
        setPiece( to_x, to_y, backInPlay );
        backInPlay->x = to_x;
        backInPlay->y = to_y;
      }
+     backInPlay->inPlay = true;
   }
 }
 
@@ -432,24 +448,19 @@ bool ChessBoard::validatePawnMove( Move move ) {
 
     if( dif_x == 1 ) {
 
-      std::cout << "before amp\n" <<  move.from_x  << " " << move.from_y << " " << move.to_x  << " " << move.from_x <<" " << dif_x << " " << moves.size() << "\n";
       
       if ( getPiece(move.to_x, move.to_y ) == NULL ) {
 
 	if( moves.size() != 0 ) {
 	
-	  std::cout << "checking amp\n";
-
 	  Move prevMove = moves.top();
 
 	  Piece* piece = getPiece( prevMove.to_x, prevMove.to_y );
       
 	  if( ( piece->type != PAWN) ) {
-	    std::cout << "number one\n";
 	    return false;
 	  }
 	  if( std::abs( prevMove.from_y - prevMove.to_y ) != 2 || prevMove.to_x != prevMove.from_x ) {
-	    std::cout << "number two\n";
 	    return false;
 	  }
 	  
@@ -518,24 +529,23 @@ bool ChessBoard::isMate( PieceColor color ) {
   std::vector<Piece*> pieces = findThreatheningPieces( king );
   //To do, check if any of the pieces can take the threathening pieces.
   
-  if( pieces.size() == 1 ) return false;
+  if( pieces.size() == 1 ) { 
+    std::cout << "Noone can take the king on: x: " << from_x << " y: " << from_y << "\n";
+    return false; 
+  }
   else {
     std::vector<Piece*> toCheck = ( color == WHITE ) ? whitePieces : blackPieces;
-    int nrOfThreathening = pieces.size() - 1;
 
-    for( int i = pieces.size() - 1; i >= 1; --i ) {
-      Piece* p = toCheck[i];
+    if( !(pieces.size() >= 3) ){
+      Piece* p = pieces[1];
       for( std::vector<Piece*>::iterator it = toCheck.begin(); it != toCheck.end(); ++it ) {
 	bool b = makeMove((*it)->x, (*it)->y, p->x, p->y);
 	if( b ) {
 	  goBackAMove();
-	  nrOfThreathening--;
-	  if( nrOfThreathening == 0 )
-	    return false;
+	  return false;
 	}
       }
     }
-    
     
   }
 
@@ -556,7 +566,7 @@ bool ChessBoard::isMate( PieceColor color ) {
     } else {
       Piece* toTake = getPiece( to_x, to_y );
 
-      if( checkIfCanMoveTo( toMove, to_x, to_y ) ) {
+      if( !makeMove( from_x, from_y, to_x, to_y ) ) {
 	continue;
       }
 
@@ -565,6 +575,7 @@ bool ChessBoard::isMate( PieceColor color ) {
 	  continue;
 	}
       }
+      std::cout << "king can move from: x: " << from_x << " y: "<< from_y << ". TO: x: " << to_x << " y: " << to_y;
       return false;
     }
   }

@@ -10,6 +10,7 @@ Move::Move( int fx, int fy, int tx, int ty, Piece* taken ) {
   to_y = ty;
   pieceTaken = taken;
   amp = false;
+  trans = false;
 }
 
 Move::Move( int fx, int fy, int tx, int ty ) {
@@ -20,6 +21,7 @@ Move::Move( int fx, int fy, int tx, int ty ) {
   to_y = ty;
   pieceTaken = NULL;
   amp = false;
+  trans = false;
 }
 
 
@@ -139,6 +141,12 @@ bool ChessBoard::makeMove(int from_x, int from_y, int to_x, int to_y ) {
   if( (pieceToMove->type == PAWN) && (std::abs( to_x - from_x ) == 1 ) && (getPiece( to_x, to_y ) == NULL) ) {
     move.pieceTaken = removePiece( to_x, from_y );
     move.amp = true;
+  }
+  
+  //transform to piece
+  if( pieceToMove->type == PAWN  && ( to_y == 0 || to_y == 7) ) {
+    move.trans = true;
+    pieceToMove->type = QUEEN;
   }
 
   if( move.pieceTaken != NULL ) {
@@ -401,7 +409,7 @@ void ChessBoard::goBackAMove() {
     }
   }
 
-  //amp
+  if( prevMove.trans ) moveBackPiece->type = PAWN;
  
 
   Piece* backInPlay = prevMove.pieceTaken;
@@ -504,23 +512,8 @@ Square* ChessBoard::getSquare( int x, int y ) {
   return &board[y][x];
 }
 
-void ChessBoard::print() {
-  /*for( int i = 0; i < BOARD_WIDTH_HEIGHT; ++i ) {
-    for( int j = 0; j < BOARD_WIDTH_HEIGHT; ++j ) {
-    std::cout << (board[i][j] == NULL );
-    }
-    std::cout << "\n";
-    }*/
-
-  std::cout << sizeof(board)/sizeof(board[0]) << "\n";
-  std::cout << sizeof( board[0] ) / sizeof( board[0][0] ) << "\n";
-
-  std::cout << ( &board[0][0] == NULL ) << "\n";
-}
-
-//TODO
 bool ChessBoard::isMate( PieceColor color ) {
-
+  
    
   Square* kS = findKing( color );
   Piece* king = kS->getPiece();
@@ -548,7 +541,7 @@ bool ChessBoard::isMate( PieceColor color ) {
     }
     
   }
-
+  
   PieceColor toMove;
 
   if( color == WHITE ) toMove = BLACK;
@@ -569,6 +562,7 @@ bool ChessBoard::isMate( PieceColor color ) {
       if( !makeMove( from_x, from_y, to_x, to_y ) ) {
 	continue;
       }
+      goBackAMove();
 
       if( toTake != NULL ) {
 	if( toTake->color == color ) {

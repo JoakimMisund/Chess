@@ -10,6 +10,7 @@ struct Move {
   int to_x, to_y;
   
   bool amp;
+  bool trans;
   
   Piece* pieceTaken;
   
@@ -53,6 +54,5 @@ class ChessBoard {
   bool makeMove( int from_x, int from_y, int to_x, int to_y );
   Piece* getPiece( int x, int y );
   void goBackAMove();
-  void print();
   bool isMate( PieceColor color );
 };
